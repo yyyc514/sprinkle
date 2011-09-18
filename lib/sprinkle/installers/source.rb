@@ -70,8 +70,8 @@ module Sprinkle
       attr_accessor :source #:nodoc:
 
       def initialize(parent, source, options = {}, &block) #:nodoc:
-        @source = source
         super parent, options, &block
+        @source = source
       end
 
       protected
