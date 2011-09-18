@@ -1,12 +1,17 @@
 module Sprinkle
   module Installers
-    # = Binary Installer
+    # The Binary installer will download a binary archive and then extract
+    # it in the directory specified by the prefix option.
     # 
-    # binary "http://some.url.com/archive.tar.gz" do
-    #  prefix   "/home/user/local"
-    #  archives "/home/user/sources"
-    # end 
+    # == Example Usage
     #
+    #  binary "http://some.url.com/archive.tar.gz" do
+    #    prefix   "/home/user/local"
+    #    archives "/home/user/sources"
+    #  end 
+    # 
+    # This example will download archive.tar.gz to /home/user/sources and then
+    # extract it into /home/user/local.
     class Binary < Installer
       def initialize(parent, binary_archive, options = {}, &block) #:nodoc:
         @binary_archive = binary_archive
@@ -27,7 +32,7 @@ module Sprinkle
         commands << "bash -c 'cd #{@options[:prefix].first} && #{extract_command} #{@options[:archives].first}/#{@binary_archive.split("/").last}'"
       end
 
-      def extract_command(archive_name = @binary_archive.split("/").last)
+      def extract_command(archive_name = @binary_archive.split("/").last) #:nodoc:
         case archive_name
         when /(tar.gz)|(tgz)$/
           'tar xzf'
