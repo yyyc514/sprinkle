@@ -121,6 +121,7 @@ module Sprinkle
         @installers = []
         self.instance_eval &block
       end
+<<<<<<< HEAD
       def add_user(username, options={},  &block)
         @installers << Sprinkle::Installers::User.new(self, username, options, &block)
       end
@@ -132,45 +133,37 @@ module Sprinkle
       def freebsd_pkg(*names, &block)
         @installers << Sprinkle::Installers::FreebsdPkg.new(self, *names, &block)
       end
+=======
+>>>>>>> clean up SSH code and use new Actor API
       
-      def freebsd_portinstall(port, &block)
-        @installers << Sprinkle::Installers::FreebsdPortinstall.new(self, port, &block)
+      class ContextError < StandardError #:nodoc:
+      end
+      
+      def get(x)
+        raise ContextError, "Cannot call get inside a package, must be inside an Installer block"
+      end
+      
+      PKG_FORMATS = %w{apt deb rpm yum zypper freebsd_pkg openbsd_pkg opensolaris_pkg pacman}
+      PKG_FORMATS.each do |format|
+        eval "def #{format}(*names, &block)
+          @installers << Sprinkle::Installers::#{format.classify}.new(self, *names, &block)
+        end"
+      end
+      
+      def add_user(username, options={},  &block)
+        install Sprinkle::Installers::User.new(self, username, options, &block)
       end
 
-      def openbsd_pkg(*names, &block)
-        @installers << Sprinkle::Installers::OpenbsdPkg.new(self, *names, &block)
+      def freebsd_portinstall(port, &block)
+        install Sprinkle::Installers::FreebsdPortinstall.new(self, port, &block)
       end
-      
-      def opensolaris_pkg(*names, &block)
-        @installers << Sprinkle::Installers::OpensolarisPkg.new(self, *names, &block)
-      end
-      
+
       def bsd_port(port, &block)
-        @installers << Sprinkle::Installers::BsdPort.new(self, port, &block)
+        install Sprinkle::Installers::BsdPort.new(self, port, &block)
       end
       
       def mac_port(port, &block)
-        @installers << Sprinkle::Installers::MacPort.new(self, port, &block)
-      end
-
-      def apt(*names, &block)
-        @installers << Sprinkle::Installers::Apt.new(self, *names, &block)
-      end
-
-      def deb(*names, &block)
-        @installers << Sprinkle::Installers::Deb.new(self, *names, &block)
-      end
-
-      def rpm(*names, &block)
-        @installers << Sprinkle::Installers::Rpm.new(self, *names, &block)
-      end
-
-      def yum(*names, &block)
-        @installers << Sprinkle::Installers::Yum.new(self, *names, &block)
-      end
-
-      def zypper(*names, &block)
-        @installers << Sprinkle::Installers::Zypper.new(self, *names, &block)
+        install Sprinkle::Installers::MacPort.new(self, port, &block)
       end
       
       def brew(*names, &block)
@@ -179,53 +172,49 @@ module Sprinkle
 
       def gem(name, options = {}, &block)
         @recommends << :rubygems
-        @installers << Sprinkle::Installers::Gem.new(self, name, options, &block)
+        install Sprinkle::Installers::Gem.new(self, name, options, &block)
       end
 
       def source(source, options = {}, &block)
         @recommends << :build_essential # Ubuntu/Debian
-        @installers << Sprinkle::Installers::Source.new(self, source, options, &block)
+        install Sprinkle::Installers::Source.new(self, source, options, &block)
       end
       
       def binary(source, options = {}, &block)
-        @installers << Sprinkle::Installers::Binary.new(self, source, options, &block)
+        install Sprinkle::Installers::Binary.new(self, source, options, &block)
       end
       
       def rake(name, options = {}, &block)
-        @installers << Sprinkle::Installers::Rake.new(self, name, options, &block)
+        install Sprinkle::Installers::Rake.new(self, name, options, &block)
       end    
       
       def thor(name, options = {}, &block)
-        @installers << Sprinkle::Installers::Thor.new(self, name, options, &block)
+        install Sprinkle::Installers::Thor.new(self, name, options, &block)
       end  
      
       def noop(&block)
-        @installers << Sprinkle::Installers::Runner.new(self, "echo noop", &block)
+        install Sprinkle::Installers::Runner.new(self, "echo noop", &block)
       end
       
       def push_text(text, path, options = {}, &block)
-        @installers << Sprinkle::Installers::PushText.new(self, text, path, options, &block)
+        install Sprinkle::Installers::PushText.new(self, text, path, options, &block)
       end
 
       def replace_text(regex, text, path, options={}, &block)
-        @installers << Sprinkle::Installers::ReplaceText.new(self, regex, text, path, options, &block)
+        install Sprinkle::Installers::ReplaceText.new(self, regex, text, path, options, &block)
       end
       
       def transfer(source, destination, options = {}, &block)
-        @installers << Sprinkle::Installers::Transfer.new(self, source, destination, options, &block)
+        install Sprinkle::Installers::Transfer.new(self, source, destination, options, &block)
       end
 
-			def runner(cmd = nil, &block)
-				@installers << Sprinkle::Installers::Runner.new(self, cmd, &block)
-			end
+      def runner(*cmds, &block)
+        install Sprinkle::Installers::Runner.new(self, cmds, &block)
+      end
 
       def verify(description = '', &block)
         @verifications << Sprinkle::Verify.new(self, description, &block)
       end  
-
-      def pacman(*names, &block)
-        @installers << Sprinkle::Installers::Pacman.new(self, *names, &block)
-      end
       
       def process(deployment, roles)
         return if meta_package?
@@ -313,6 +302,12 @@ module Sprinkle
       end
 
       def to_s; @name; end
+      
+      protected
+      
+      def install(i)
+        @installers << i
+      end
 
       private
 
