@@ -47,7 +47,11 @@ RSpec::Core::RakeTask.new(:coverage) do |t|
 end
 
 
-require 'rake/rdoctask'
+begin
+  require 'rdoc/task'
+rescue LoadError
+  require 'rake/rdoctask' 
+end
 Rake::RDocTask.new do |rdoc|
   version = File.exist?('VERSION') ? File.read('VERSION') : ""
 
