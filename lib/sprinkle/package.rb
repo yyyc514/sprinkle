@@ -129,13 +129,17 @@ module Sprinkle
       def add_group(group, options={},  &block)
         @installers << Sprinkle::Installers::Group.new(self, group, options, &block)
       end
-
-      def freebsd_pkg(*names, &block)
-        @installers << Sprinkle::Installers::FreebsdPkg.new(self, *names, &block)
+      
+      def sudo?
+        @use_sudo
       end
 =======
 >>>>>>> clean up SSH code and use new Actor API
       
+      def use_sudo(flag=true)
+        @use_sudo = flag
+      end
+            
       class ContextError < StandardError #:nodoc:
       end
       
