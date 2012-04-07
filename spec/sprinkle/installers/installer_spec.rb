@@ -1,6 +1,12 @@
 require File.expand_path("../../spec_helper", File.dirname(__FILE__))
 
 describe Sprinkle::Installers::Installer do
+  class MockInstaller < Sprinkle::Installers::Installer
+    def install_commands
+      "noop"
+    end
+  end
+
   include Sprinkle::Deployment
 
   before do
@@ -18,8 +24,7 @@ describe Sprinkle::Installers::Installer do
   end
 
   def create_installer(&block)
-    installer = Sprinkle::Installers::Installer.new @package, &block
-    installer.stub!(:puts).and_return
+    installer = MockInstaller.new @package, &block
 
     # this is actually an abstract class so we'll insert a few fake install sequences
     class << installer
@@ -98,7 +103,7 @@ describe Sprinkle::Installers::Installer do
     
     describe "with sudo" do
       before do
-        @installer = Sprinkle::Installers::Installer.new @package, :sudo => true
+        @installer = MockInstaller.new @package, :sudo => true
         @installer.delivery = @delivery
       end
       
@@ -120,7 +125,7 @@ describe Sprinkle::Installers::Installer do
     describe "with a pre command" do
       
       def create_installer_with_pre_command(cmd="")
-        installer = Sprinkle::Installers::Installer.new @package do
+        installer = MockInstaller.new @package do
           pre :install, cmd
           
           def install_commands
@@ -128,21 +133,23 @@ describe Sprinkle::Installers::Installer do
           end          
         end
         
-        installer.stub!(:puts).and_return
         installer.delivery = @delivery
         installer
       end
+ 
       before do
         @installer = create_installer_with_pre_command('run')
       end
+
       describe "string commands" do
         it "should insert the pre command for the specific package in the installation process" do
           @installer.send(:install_sequence).should == [ 'run', 'installer' ]
         end
-      end      
+      end
+      
       describe "blocks as commands" do
         before(:each) do          
-          @installer = Sprinkle::Installers::Installer.new @package do
+          @installer = MockInstaller.new @package do
             pre :install do
               %w(a b c)
             end
@@ -152,18 +159,20 @@ describe Sprinkle::Installers::Installer do
             end          
           end
 
-          @installer.stub!(:puts).and_return
           @installer.delivery = @delivery
         end
+
         it "should be able to store a block if it's the pre command" do
           @installer.send(:install_sequence).should == [ "a", "b", "c", 'installer' ]
         end
       end
+
       describe "arrays as commands" do
         before(:each) do
           @array = ["a", "b"]
           @installer = create_installer_with_pre_command(@array)
         end
+
         it "should be able to store an array if it's the pre command" do
           @installer.send(:install_sequence).should == [ @array, 'installer' ].flatten
         end

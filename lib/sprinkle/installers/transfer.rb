@@ -181,8 +181,8 @@ module Sprinkle
           @sourcepath = @source
         end
 
-        logger.info "--> Transferring #{sourcepath} to #{@destination} for roles: #{roles}"
-        @delivery.install(self, roles, :recursive => @options[:recursive])
+        logger.info "--> Transferring #{sourcepath} to #{@destination} for roles: #{roles} #{options.inspect unless options.empty?}"
+        @delivery.install(self, roles, options)
       end
     end
   end
